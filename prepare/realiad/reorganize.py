@@ -53,13 +53,6 @@ def calculate_white_ratio(mask_path):
     return white_pixels / total_pixels
 
 def process_data(base_dir="."):
-    """
-    处理当前目录下的图片数据并重新组织，同时生成带标注的Excel文件。
-    只复制有对应掩码的异常图片，并保证图片-mask-Excel条目的对应。
-
-    Args:
-        base_dir (str): 基础目录，默认为当前目录。
-    """
 
     mod_dir = os.path.join(base_dir, "realiad_reorg")
     os.makedirs(mod_dir, exist_ok=True)

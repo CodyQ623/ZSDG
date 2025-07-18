@@ -195,7 +195,7 @@ def sample_images(batches_done):
     real_target_mask = (real_target_mask * 0.5) + 0.5
 
     fake_target_stats = fake_target_mask.detach()
-    print(f"生成器输出统计: min={fake_target_stats.min().item():.4f}, max={fake_target_stats.max().item():.4f}, mean={fake_target_stats.mean().item():.4f}")
+    print(f"Generator stats: min={fake_target_stats.min().item():.4f}, max={fake_target_stats.max().item():.4f}, mean={fake_target_stats.mean().item():.4f}")
 
     # Adjust nrow based on the actual batch size used for validation
     n_val_samples = min(val_dataloader.batch_size, source_mask.size(0))

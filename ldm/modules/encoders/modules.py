@@ -271,41 +271,36 @@ class SemapEncoder(AbstractEncoder):
         super().__init__()
         self.device = device
         
-        # 参考ControlNet的input_hint_block设计
         self.encoder = nn.Sequential(
-            conv_nd(2, 4, 16, 3, padding=1),  # 4通道SeMaP输入
+            conv_nd(2, 4, 16, 3, padding=1),  
             nn.SiLU(),
             conv_nd(2, 16, 16, 3, padding=1),
             nn.SiLU(),
-            conv_nd(2, 16, 32, 3, padding=1, stride=2),  # 降采样到128x128
+            conv_nd(2, 16, 32, 3, padding=1, stride=2), 
             nn.SiLU(),
             conv_nd(2, 32, 32, 3, padding=1),
             nn.SiLU(),
-            conv_nd(2, 32, 96, 3, padding=1, stride=2),  # 降采样到64x64
+            conv_nd(2, 32, 96, 3, padding=1, stride=2),  
             nn.SiLU(),
             conv_nd(2, 96, 96, 3, padding=1),
             nn.SiLU(),
-            conv_nd(2, 96, 256, 3, padding=1, stride=2),  # 降采样到32x32
+            conv_nd(2, 96, 256, 3, padding=1, stride=2),  
             nn.SiLU(),
-            # 修改为320通道输出，与model_channels匹配，而非768(交叉注意力用)
             zero_module(conv_nd(2, 256, 320, 3, padding=1)),
         )
     
     def encode(self, semap):
-        # 处理输入
         if isinstance(semap, list):
-            # 处理批量输入
+
             semap = torch.stack([self._prepare_tensor(s) for s in semap]).to(self.device)
         else:
             semap = self._prepare_tensor(semap).to(self.device)
         
-        # 特征提取 - 输出空间特征图，而非序列
         features = self.encoder(semap)
         
         return features
     
     def _prepare_tensor(self, x):
-        # 将各种可能的输入格式转换为正确的张量格式
         if isinstance(x, torch.Tensor):
             pass
         elif isinstance(x, np.ndarray):
@@ -313,7 +308,6 @@ class SemapEncoder(AbstractEncoder):
         else:
             raise ValueError(f"Unexpected input type: {type(x)}")
         
-        # 确保是4D张量 [batch, channels, height, width]
         if len(x.shape) == 3 and x.shape[-1] == 4:  # [H, W, C]
             x = x.permute(2, 0, 1).unsqueeze(0)  # [1, C, H, W]
         elif len(x.shape) == 4 and x.shape[-1] == 4:  # [B, H, W, C]
@@ -332,13 +326,11 @@ class MaskEncoder(AbstractEncoder):
         super().__init__()
         self.device = device
         
-        # 简单的mask编码器，输出空的context
         self.encoder = nn.Sequential(
-            nn.Identity()  # 占位符，实际不使用
+            nn.Identity() 
         )
     
     def encode(self, mask):
-        # 直接返回空的768维context向量，与CLIP格式匹配
         if isinstance(mask, list):
             batch_size = len(mask)
         elif isinstance(mask, torch.Tensor):
@@ -346,7 +338,6 @@ class MaskEncoder(AbstractEncoder):
         else:
             batch_size = 1
             
-        # 返回空的context向量 [batch_size, 77, 768]
         return torch.zeros((batch_size, 77, 768), device=self.device)
     
     def forward(self, x):

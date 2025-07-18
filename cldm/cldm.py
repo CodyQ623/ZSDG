@@ -30,7 +30,7 @@ class ControlledUnetModel(UNetModel):
         self,
         x,
         timesteps=None,
-        context=None,  # 允许为空context而不是None
+        context=None,  # Allow empty context instead of None
         control=None,
         only_mid_control=False,
         **kwargs,
@@ -43,9 +43,9 @@ class ControlledUnetModel(UNetModel):
             emb = self.time_embed(t_emb)
             h = x.type(self.dtype)
             for module in self.input_blocks:
-                h = module(h, emb, context)  # 使用传入的context
+                h = module(h, emb, context)  # Use passed context
                 hs.append(h)
-            h = self.middle_block(h, emb, context)  # 使用传入的context
+            h = self.middle_block(h, emb, context)  # Use passed context
         
         if control is not None:
             h += control.pop()
@@ -55,7 +55,7 @@ class ControlledUnetModel(UNetModel):
                 h = torch.cat([h, hs.pop()], dim=1)
             else:
                 h = torch.cat([h, hs.pop() + control.pop()], dim=1)
-            h = module(h, emb, context)  # 使用传入的context
+            h = module(h, emb, context)  # Use passed context
         
         h = h.type(x.dtype)
         return self.out(h)
@@ -342,7 +342,7 @@ class ControlNet(nn.Module):
         t_emb = timestep_embedding(timesteps, self.model_channels, repeat_only=False)
         emb = self.time_embed(t_emb)
         
-        # 处理SeMaP
+        # Process SeMaP
         guided_hint = self.input_hint_block(hint, emb)
         
         outs = []
@@ -350,15 +350,15 @@ class ControlNet(nn.Module):
         h = x.type(self.dtype)
         for module, zero_conv in zip(self.input_blocks, self.zero_convs):
             if guided_hint is not None:
-                h = module(h, emb, context)  # 使用传入的context而不是硬编码None
+                h = module(h, emb, context)  # Use passed context instead of hardcoded None
                 h += guided_hint
                 guided_hint = None
             else:
-                h = module(h, emb, context)  # 使用传入的context而不是硬编码None
-            outs.append(zero_conv(h, emb, context))  # 使用传入的context
+                h = module(h, emb, context)  # Use passed context instead of hardcoded None
+            outs.append(zero_conv(h, emb, context))  # Use passed context
         
-        h = self.middle_block(h, emb, context)  # 使用传入的context
-        outs.append(self.middle_block_out(h, emb, context))  # 使用传入的context
+        h = self.middle_block(h, emb, context)  # Use passed context
+        outs.append(self.middle_block_out(h, emb, context))  # Use passed context
         
         return outs
 
@@ -374,15 +374,13 @@ class ControlLDM(LatentDiffusion):
 
     @torch.no_grad()
     def get_input(self, batch, k, bs=None, *args, **kwargs):
-        # 获取target图像(用于加噪)
+
         x = super().get_input(batch, self.first_stage_key, *args, **kwargs)[0]
         
-        # 处理SeMaP作为控制信号
-        semap = batch["txt"]  # SeMaP保存在txt字段
+        semap = batch["txt"] 
         if bs is not None:
             semap = semap[:bs]
         
-        # 将SeMaP转换为正确格式
         if isinstance(semap, torch.Tensor):
             semap = semap.to(self.device)
             if len(semap.shape) == 3 and semap.shape[-1] == 4:  # [H, W, C]
@@ -390,7 +388,6 @@ class ControlLDM(LatentDiffusion):
             elif len(semap.shape) == 4 and semap.shape[-1] == 4:  # [B, H, W, C]
                 semap = semap.permute(0, 3, 1, 2)  # [B, C, H, W]
         else:
-            # 处理numpy数组
             semap = torch.from_numpy(semap).to(self.device)
             if len(semap.shape) == 3 and semap.shape[-1] == 4:
                 semap = semap.permute(2, 0, 1).unsqueeze(0)
@@ -399,35 +396,29 @@ class ControlLDM(LatentDiffusion):
         
         semap = semap.to(memory_format=torch.contiguous_format).float()
         
-        # 创建一个符合交叉注意力期望维度的空context向量
-        # 格式为[batch_size, 77, 768]，与CLIP输出格式相同
         empty_context = torch.zeros((x.shape[0], 77, 768), device=self.device)
         
-        # 添加empty_crossattn键
         return x, dict(c_concat=[semap], c_crossattn=[empty_context], empty_crossattn=[empty_context])
 
     def apply_model(self, x_noisy, t, cond, *args, **kwargs):
         assert isinstance(cond, dict)
         diffusion_model = self.model.diffusion_model
         
-        # 获取空的context向量
-        cond_txt = torch.cat(cond['c_crossattn'], 1)  # 空的768维context
+        cond_txt = torch.cat(cond['c_crossattn'], 1)  
         
-        # 使用SeMaP作为控制信号
         control = self.control_model(
             x=x_noisy,
-            hint=torch.cat(cond['c_concat'], 1),  # SeMaP作为hint
+            hint=torch.cat(cond['c_concat'], 1),  
             timesteps=t,
-            context=cond_txt,  # 使用空context而不是None
+            context=cond_txt, 
         )
         
         control = [c * scale for c, scale in zip(control, self.control_scales)]
         
-        # 使用空context而不是None
         eps = diffusion_model(
             x=x_noisy,
             timesteps=t,
-            context=cond_txt,  # 使用空context而不是None
+            context=cond_txt,  
             control=control,
             only_mid_control=self.only_mid_control,
         )

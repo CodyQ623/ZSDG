@@ -997,7 +997,6 @@ class LatentDiffusion(DDPM):
 
         z = self.get_first_stage_encoding(encoder_posterior).detach()
         
-        # 初始化 empty_feature 为 None
         empty_feature = None
 
         if self.model.conditioning_key is not None and not self.force_null_conditioning:
@@ -1014,12 +1013,10 @@ class LatentDiffusion(DDPM):
                 xc = x
             if not self.cond_stage_trainable or force_c_encode:
                 if isinstance(xc, dict) or isinstance(xc, list):
-                    # 当使用SeMaP时不需要empty_feature，可以设置为None或与c相同
                     c = self.get_learned_conditioning(xc)
-                    empty_feature = c  # 使用与c相同的值作为empty_feature
+                    empty_feature = c  
                 else:
                     c = self.get_learned_conditioning(xc.to(self.device))
-                    # 同样设置empty_feature
                     empty_feature = c
             else:
                 c = xc
@@ -1038,7 +1035,6 @@ class LatentDiffusion(DDPM):
                 pos_x, pos_y = self.compute_latent_shifts(batch)
                 c = {'pos_x': pos_x, 'pos_y': pos_y}
         
-        # 确保无论走哪条路径，empty_feature都已定义
         if empty_feature is None:
             empty_feature = c
             

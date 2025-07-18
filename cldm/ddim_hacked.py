@@ -281,7 +281,7 @@ class DDIMSampler(object):
         device = self.model.betas.device
         b = shape[0]
         
-        # 1. 初始化设置，与ddim_sampling相同
+        # 1. Initialize settings, same as ddim_sampling
         if timesteps is None:
             timesteps = self.ddpm_num_timesteps if ddim_use_original_steps else self.ddim_timesteps
         elif timesteps is not None and not ddim_use_original_steps:
@@ -292,7 +292,7 @@ class DDIMSampler(object):
         total_steps = timesteps if ddim_use_original_steps else timesteps.shape[0]
         print(f"Running DDIM Sampling with {total_steps} timesteps")
 
-        # 2. 初始化图像
+        # 2. Initialize image
         if x_T is None:
             img = torch.randn(shape, device=device)
         else:
@@ -301,12 +301,12 @@ class DDIMSampler(object):
         intermediates = {'x_inter': [img], 'pred_x0': [img]}
         iterator = tqdm(time_range, desc='DDIM Sampler', total=total_steps)
 
-        # 3. 扩散过程
+        # 3. Diffusion process
         for i, step in enumerate(iterator):
             index = total_steps - i - 1
             ts = torch.full((b,), step, device=device, dtype=torch.long)
 
-            # 在最后20步使用mask进行引导，与ddim_sampling相同
+            # Use mask guidance in the last 20 steps, same as ddim_sampling
             if mask is not None and index < 20 and x0 is not None:
                 img_orig = self.model.q_sample(x0, ts)
                 img = img_orig * mask + (1.0 - mask) * img
@@ -315,7 +315,7 @@ class DDIMSampler(object):
                 assert len(ucg_schedule) == len(time_range)
                 unconditional_guidance_scale = ucg_schedule[i]
 
-            # 执行DDIM采样步骤
+            # Execute DDIM sampling step
             outs = self.p_sample_ddim(
                 img,
                 cond,
@@ -333,23 +333,23 @@ class DDIMSampler(object):
             )
             img, pred_x0 = outs
 
-            # 4. 只在最后一步进行像素空间混合
-            if org_mask is not None and index == 0:  # 只在最后一步替换正常区域
-                # 解码当前预测
+            # 4. Perform pixel space blending only in the last step
+            if org_mask is not None and index == 0:  # Replace normal areas only in the last step
+                # Decode current prediction
                 curr_img = self.model.decode_first_stage(pred_x0)
-                # 使用mask进行混合：异常区域使用生成的内容，正常区域使用真实图片
+                # Use mask for blending: abnormal areas use generated content, normal areas use real image
                 pixel_blended = (
-                    curr_img * org_mask +          # 生成的异常区域
-                    init_image * (1 - org_mask)    # 真实图片的正常区域
+                    curr_img * org_mask +          # Generated abnormal areas
+                    init_image * (1 - org_mask)    # Real image normal areas
                 )
-                # 重新编码到潜在空间
+                # Re-encode to latent space
                 img_x0 = self.model.get_first_stage_encoding(
                     self.model.encode_first_stage(pixel_blended)
                 )
-                # 不需要添加噪声，因为是最后一步
+                # No need to add noise since this is the last step
                 img = img_x0
 
-            # 5. 回调和中间结果存储
+            # 5. Callback and intermediate result storage
             if callback: callback(i)
             if img_callback: img_callback(pred_x0, i)
 

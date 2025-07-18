@@ -280,7 +280,7 @@ def generate_from_semap(
                         model=None, discriminator=None, discriminator_weight=1.0, is_multiscale=False,
                         initial_mean=None, initial_std=None):
             """
-            返回: (total_loss, recon_loss, disc_loss, disc_score, color_loss, perceptual_loss, frequency_loss)
+            Returns: (total_loss, recon_loss, disc_loss, disc_score, color_loss, perceptual_loss, frequency_loss)
             """
             curr_latent_scaled = 1.0 / model.scale_factor * curr_latent
             curr_reconstruction = model.first_stage_model.decode(curr_latent_scaled)
