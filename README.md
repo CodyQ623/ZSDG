@@ -5,9 +5,8 @@
 ## Dataset
 1. [RealIAD](https://huggingface.co/datasets/Real-IAD/Real-IAD/tree/main/realiad_256) (To pair with the corresponding MVTEC dataset, we only need the following 3 categories of RealIAD dataset: **toothbrush, vcpill, and zipper**)
 2. [MVTEC AD](https://www.mvtec.com/company/research/datasets/mvtec-ad)
-3. [PCB Dataset](https://pan.baidu.com/s/1PN70ACOY_gYBvmHakcoImg?pwd=1x4e)
-4. [Steel Dataset](https://pan.baidu.com/s/1_BORNJrO4msD0OPEcVSc-Q?pwd=9m10#list/path=%2FCPANet) (We only use the **FSSD-12** dataset from this link)
-5. [Texture-AD Dataset](https://huggingface.co/datasets/texture-ad/Texture-AD-Benchmark)
+3. [Steel Dataset](https://pan.baidu.com/s/1_BORNJrO4msD0OPEcVSc-Q?pwd=9m10#list/path=%2FCPANet) (We only use the **FSSD-12** dataset from this link)
+4. [Texture-AD Dataset](https://huggingface.co/datasets/texture-ad/Texture-AD-Benchmark)
 **P.S.**
 **1. The following tutorial is based on the RealIAD dataset, but can be adapted to other datasets with minor modifications.**
 **2. All the following bash commands should be run in the root folder**
